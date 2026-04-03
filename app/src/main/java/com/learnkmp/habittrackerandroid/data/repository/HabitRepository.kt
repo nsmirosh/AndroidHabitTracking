@@ -6,5 +6,6 @@ import kotlinx.coroutines.flow.Flow
 interface HabitRepository {
     fun observeAll(): Flow<List<Habit>>
     suspend fun upsert(habit: Habit)
+    suspend fun delete(habitId: String)
     suspend fun syncFromFirestore(userId: String)
 }

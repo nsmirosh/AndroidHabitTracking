@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -77,7 +79,8 @@ fun HabitListScreen(
                 items(habits, key = { it.id }) { habit ->
                     SwipeableHabitItem(
                         habit = habit,
-                        onMarkCompleted = { viewModel.markCompletedToday(habit) },
+                        onToggleCompleted = { viewModel.toggleCompleted(habit) },
+                        onDelete = { viewModel.deleteHabit(habit) },
                     )
                 }
             }
@@ -89,43 +92,71 @@ fun HabitListScreen(
 @Composable
 private fun SwipeableHabitItem(
     habit: Habit,
-    onMarkCompleted: () -> Unit,
+    onToggleCompleted: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.StartToEnd) {
-                onMarkCompleted()
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onToggleCompleted()
+                    false // don't dismiss
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onDelete()
+                    true // dismiss the item
+                }
+                else -> false
             }
-            // Always return false — we never actually dismiss the item
-            false
         },
     )
 
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = true,
-        enableDismissFromEndToStart = false,
+        enableDismissFromEndToStart = true,
         backgroundContent = {
-            val bgColor by animateColorAsState(
-                targetValue = if (dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    Color.Transparent
-                },
-                label = "swipe-bg",
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(bgColor, shape = MaterialTheme.shapes.medium)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Complete",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
+            when (dismissState.dismissDirection) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    val bgColor = if (habit.completedToday) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(bgColor, shape = MaterialTheme.shapes.medium)
+                            .padding(horizontal = 20.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Icon(
+                            imageVector = if (habit.completedToday) Icons.Default.Refresh else Icons.Default.Check,
+                            contentDescription = if (habit.completedToday) "Reset" else "Complete",
+                            tint = if (habit.completedToday) {
+                                MaterialTheme.colorScheme.onSecondaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            },
+                        )
+                    }
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium)
+                            .padding(horizontal = 20.dp),
+                        contentAlignment = Alignment.CenterEnd,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete",
+                            tint = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    }
+                }
+                else -> {}
             }
         },
     ) {

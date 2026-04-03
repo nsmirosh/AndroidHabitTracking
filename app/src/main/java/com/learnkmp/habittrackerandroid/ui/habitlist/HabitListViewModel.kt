@@ -19,10 +19,15 @@ class HabitListViewModel @Inject constructor(
     val habits: StateFlow<List<Habit>> = repository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun markCompletedToday(habit: Habit) {
-        if (habit.completedToday) return
+    fun toggleCompleted(habit: Habit) {
         viewModelScope.launch {
-            repository.upsert(habit.copy(completedToday = true))
+            repository.upsert(habit.copy(completedToday = !habit.completedToday))
+        }
+    }
+
+    fun deleteHabit(habit: Habit) {
+        viewModelScope.launch {
+            repository.delete(habit.id)
         }
     }
 }

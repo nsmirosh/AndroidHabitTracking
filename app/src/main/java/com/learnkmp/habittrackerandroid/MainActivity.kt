@@ -35,12 +35,10 @@ class MainActivity : ComponentActivity() {
                 NavDisplay(
                     modifier = Modifier.fillMaxSize(),
                     backStack = backStack,
-                    onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
                     entryProvider = entryProvider {
                         entry<AppRoute.Login> {
                             LoginScreen(
                                 onLoginSuccess = {
-                                    Log.d("Login", "navigating to the Habit list")
                                     backStack.clear()
                                     backStack.add(AppRoute.HabitList)
                                 },
@@ -55,7 +53,9 @@ class MainActivity : ComponentActivity() {
 
                         entry<AppRoute.CreateHabit> {
                             CreateHabitScreen(
-                                onSaved = { backStack.removeLastOrNull() },
+                                onSaved = {
+                                    Log.d("MainActivity", "removing last")
+                                    backStack.removeLastOrNull() },
                                 onBack = { backStack.removeLastOrNull() },
                             )
                         }

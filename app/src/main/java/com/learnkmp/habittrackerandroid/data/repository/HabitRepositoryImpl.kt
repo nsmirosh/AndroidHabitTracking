@@ -1,5 +1,6 @@
 package com.learnkmp.habittrackerandroid.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.learnkmp.habittrackerandroid.data.local.HabitDao
 import com.learnkmp.habittrackerandroid.data.local.toDomain
@@ -20,11 +21,20 @@ class HabitRepositoryImpl @Inject constructor(
         dao.observeAll().map { entities -> entities.map { it.toDomain() } }
 
     override suspend fun upsert(habit: Habit) {
-        val entity = habit.toEntity()
-        dao.upsert(entity)
-        // Write-through to Firestore; local operation is not affected if this fails
         try {
+            val entity = habit.toEntity()
+            dao.upsert(entity)
+            // Write-through to Firestore; local operation is not affected if this fails
             auth.currentUser?.uid?.let { uid -> firestoreSource.upsert(uid, entity) }
+        } catch (e: Exception) {
+            Log.e("HabitRepositoryImpl", e.message.toString())
+        }
+    }
+
+    override suspend fun delete(habitId: String) {
+        dao.deleteById(habitId)
+        try {
+            auth.currentUser?.uid?.let { uid -> firestoreSource.delete(uid, habitId) }
         } catch (_: Exception) {
             // Firestore failures are silently ignored for the MVP
         }

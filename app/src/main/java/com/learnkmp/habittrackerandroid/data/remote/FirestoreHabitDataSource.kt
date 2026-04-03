@@ -37,4 +37,11 @@ class FirestoreHabitDataSource @Inject constructor(
             )
             .await()
     }
+
+    suspend fun delete(userId: String, habitId: String) {
+        habitsCollection(userId)
+            .document(habitId)
+            .delete()
+            .await()
+    }
 }
