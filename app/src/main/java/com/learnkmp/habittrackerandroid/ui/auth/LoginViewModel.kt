@@ -10,6 +10,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.learnkmp.habittrackerandroid.data.repository.HabitRepository
+import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +38,7 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value = LoginUiState.Loading
             try {
+                Log.d("LoginViewModel", "Starting sign-in with webClientId=$webClientId")
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
                     .setServerClientId(webClientId)
@@ -47,7 +49,9 @@ class LoginViewModel @Inject constructor(
                     .build()
 
                 val credentialManager = CredentialManager.create(activity)
+                Log.d("LoginViewModel", "Calling getCredential...")
                 val result = credentialManager.getCredential(activity, request)
+                Log.d("LoginViewModel", "getCredential returned: ${result.credential.type}")
 
                 val googleCredential = GoogleIdTokenCredential.createFrom(result.credential.data)
                 val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)
@@ -55,8 +59,10 @@ class LoginViewModel @Inject constructor(
                 val authResult = auth.signInWithCredential(firebaseCredential).await()
                 authResult.user?.uid?.let { uid -> repository.syncFromFirestore(uid) }
 
+                Log.d("LoginViewModel", "returning Success")
                 _state.value = LoginUiState.Success
             } catch (e: Exception) {
+                Log.e("LoginViewModel", "Sign-in failed", e)
                 _state.value = LoginUiState.Error(e.message ?: "Sign-in failed")
             }
         }

@@ -22,10 +22,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.learnkmp.habittrackerandroid" />
+                  <option name="mobileSdkAppId" value="1:59720082925:android:1afe10b6513f800218f3e4" />
+                  <option name="projectId" value="newhabittracker-9245a" />
+                  <option name="projectNumber" value="59720082925" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

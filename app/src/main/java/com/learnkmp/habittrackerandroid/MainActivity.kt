@@ -1,11 +1,15 @@
 package com.learnkmp.habittrackerandroid
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.navigation3.runtime.NavEntry
-import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.google.firebase.auth.FirebaseAuth
 import com.learnkmp.habittrackerandroid.navigation.AppRoute
@@ -26,38 +30,37 @@ class MainActivity : ComponentActivity() {
                     if (FirebaseAuth.getInstance().currentUser != null) AppRoute.HabitList
                     else AppRoute.Login
 
-                val backStack = rememberNavBackStack(startRoute)
+                val backStack = remember { mutableStateListOf(startRoute) }
 
                 NavDisplay(
+                    modifier = Modifier.fillMaxSize(),
                     backStack = backStack,
                     onBack = { if (backStack.size > 1) backStack.removeLastOrNull() },
-                ) { route ->
-                    when (route) {
-                        AppRoute.Login -> NavEntry(key = route) {
+                    entryProvider = entryProvider {
+                        entry<AppRoute.Login> {
                             LoginScreen(
                                 onLoginSuccess = {
+                                    Log.d("Login", "navigating to the Habit list")
                                     backStack.clear()
                                     backStack.add(AppRoute.HabitList)
                                 },
                             )
                         }
 
-                        AppRoute.HabitList -> NavEntry(key = route) {
+                        entry<AppRoute.HabitList> {
                             HabitListScreen(
                                 onCreateHabit = { backStack.add(AppRoute.CreateHabit) },
                             )
                         }
 
-                        AppRoute.CreateHabit -> NavEntry(key = route) {
+                        entry<AppRoute.CreateHabit> {
                             CreateHabitScreen(
                                 onSaved = { backStack.removeLastOrNull() },
                                 onBack = { backStack.removeLastOrNull() },
                             )
                         }
-
-                        else -> NavEntry(key = route) {}
-                    }
-                }
+                    },
+                )
             }
         }
     }
