@@ -27,7 +27,7 @@ class HabitRepositoryImpl @Inject constructor(
             // Write-through to Firestore; local operation is not affected if this fails
             auth.currentUser?.uid?.let { uid -> firestoreSource.upsert(uid, entity) }
         } catch (e: Exception) {
-            Log.e("HabitRepositoryImpl", e.message.toString())
+            Log.e("HabitRepositoryImpl", "Failed to upsert habit: ${e.message}", e)
         }
     }
 
@@ -35,8 +35,8 @@ class HabitRepositoryImpl @Inject constructor(
         dao.deleteById(habitId)
         try {
             auth.currentUser?.uid?.let { uid -> firestoreSource.delete(uid, habitId) }
-        } catch (_: Exception) {
-            // Firestore failures are silently ignored for the MVP
+        } catch (e: Exception) {
+            Log.e("HabitRepositoryImpl", "Failed to delete habit from Firestore: ${e.message}", e)
         }
     }
 
