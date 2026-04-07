@@ -13,6 +13,9 @@ interface HabitDao {
     @Upsert
     suspend fun upsert(habit: HabitEntity)
 
+    @Query("SELECT * FROM habits WHERE id = :id LIMIT 1")
+    fun observeById(id: String): Flow<HabitEntity?>
+
     @Query("DELETE FROM habits WHERE id = :id")
     suspend fun deleteById(id: String)
 }

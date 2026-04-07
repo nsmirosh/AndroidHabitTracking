@@ -1,7 +1,7 @@
 package com.learnkmp.habittrackerandroid.ui.habitlist
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,15 +32,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.domain.model.Habit
+import com.learnkmp.habittrackerandroid.domain.model.HabitType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitListScreen(
     onCreateHabit: () -> Unit,
+    onEditHabit: (String) -> Unit,
     viewModel: HabitListViewModel = hiltViewModel(),
 ) {
     val habits by viewModel.habits.collectAsState()
@@ -81,6 +82,7 @@ fun HabitListScreen(
                         habit = habit,
                         onToggleCompleted = { viewModel.toggleCompleted(habit) },
                         onDelete = { viewModel.deleteHabit(habit) },
+                        onClick = { onEditHabit(habit.id) },
                     )
                 }
             }
@@ -94,21 +96,10 @@ private fun SwipeableHabitItem(
     habit: Habit,
     onToggleCompleted: () -> Unit,
     onDelete: () -> Unit,
+    onClick: () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    onToggleCompleted()
-                    false // don't dismiss
-                }
-                SwipeToDismissBoxValue.EndToStart -> {
-                    onDelete()
-                    true // dismiss the item
-                }
-                else -> false
-            }
-        },
+        positionalThreshold = { 50f },
     )
 
     SwipeToDismissBox(
@@ -141,11 +132,15 @@ private fun SwipeableHabitItem(
                         )
                     }
                 }
+
                 SwipeToDismissBoxValue.EndToStart -> {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.errorContainer, shape = MaterialTheme.shapes.medium)
+                            .background(
+                                MaterialTheme.colorScheme.errorContainer,
+                                shape = MaterialTheme.shapes.medium,
+                            )
                             .padding(horizontal = 20.dp),
                         contentAlignment = Alignment.CenterEnd,
                     ) {
@@ -156,16 +151,17 @@ private fun SwipeableHabitItem(
                         )
                     }
                 }
+
                 else -> {}
             }
         },
     ) {
-        HabitItem(habit = habit)
+        HabitItem(habit = habit, onClick = onClick)
     }
 }
 
 @Composable
-private fun HabitItem(habit: Habit) {
+private fun HabitItem(habit: Habit, onClick: () -> Unit) {
     val containerColor = if (habit.completedToday) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
@@ -173,7 +169,9 @@ private fun HabitItem(habit: Habit) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier
@@ -183,10 +181,18 @@ private fun HabitItem(habit: Habit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(
-                text = habit.name,
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            Column {
+                Text(
+                    text = habit.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                val label = if (habit.type == HabitType.TIMES_PER_DAY) "times" else "min"
+                Text(
+                    text = "${habit.progressToday} / ${habit.targetCount} $label",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (habit.completedToday) {
                 Icon(
                     imageVector = Icons.Default.Check,

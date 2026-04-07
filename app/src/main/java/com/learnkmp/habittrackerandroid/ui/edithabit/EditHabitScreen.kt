@@ -1,4 +1,4 @@
-package com.learnkmp.habittrackerandroid.ui.createhabit
+package com.learnkmp.habittrackerandroid.ui.edithabit
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,16 +13,19 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -32,15 +35,16 @@ import com.learnkmp.habittrackerandroid.domain.model.HabitType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateHabitScreen(
-    onSaved: () -> Unit,
+fun EditHabitScreen(
+    habitId: String,
     onBack: () -> Unit,
-    viewModel: CreateHabitViewModel = hiltViewModel(),
+    viewModel: EditHabitViewModel = hiltViewModel(),
 ) {
+    LaunchedEffect(habitId) { viewModel.load(habitId) }
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("New Habit") },
+                title = { Text("Edit Habit") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -49,6 +53,8 @@ fun CreateHabitScreen(
             )
         },
     ) { innerPadding ->
+        if (!viewModel.isLoaded) return@Scaffold
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -100,18 +106,39 @@ fun CreateHabitScreen(
                     imeAction = ImeAction.Done,
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { viewModel.save(onSaved) },
+                    onDone = { viewModel.save(onBack) },
                 ),
             )
 
             Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.save(onSaved) },
+                onClick = { viewModel.save(onBack) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = viewModel.nameInput.isNotBlank(),
             ) {
-                Text("Save")
+                Text("Save Changes")
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = { viewModel.resetForToday(onBack) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Reset Progress for Today")
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick = { viewModel.delete(onBack) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                ),
+            ) {
+                Text("Delete Habit")
             }
         }
     }

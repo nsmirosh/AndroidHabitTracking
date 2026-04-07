@@ -20,11 +20,14 @@ class HabitRepositoryImpl @Inject constructor(
     override fun observeAll(): Flow<List<Habit>> =
         dao.observeAll().map { entities -> entities.map { it.toDomain() } }
 
+    override fun observeById(habitId: String): Flow<Habit?> =
+        dao.observeById(habitId).map { it?.toDomain() }
+
     override suspend fun upsert(habit: Habit) {
         try {
             val entity = habit.toEntity()
             dao.upsert(entity)
-            // Write-through to Firestore; local operation is not affected if this fails
+            // Fire-and-forget write to Firestore; local Room write is the source of truth
             auth.currentUser?.uid?.let { uid -> firestoreSource.upsert(uid, entity) }
         } catch (e: Exception) {
             Log.e("HabitRepositoryImpl", "Failed to upsert habit: ${e.message}", e)

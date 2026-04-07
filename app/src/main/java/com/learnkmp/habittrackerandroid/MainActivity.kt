@@ -15,6 +15,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.learnkmp.habittrackerandroid.navigation.AppRoute
 import com.learnkmp.habittrackerandroid.ui.auth.LoginScreen
 import com.learnkmp.habittrackerandroid.ui.createhabit.CreateHabitScreen
+import com.learnkmp.habittrackerandroid.ui.edithabit.EditHabitScreen
 import com.learnkmp.habittrackerandroid.ui.habitlist.HabitListScreen
 import com.learnkmp.habittrackerandroid.ui.theme.HabitTrackerAndroidTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
                         entry<AppRoute.HabitList> {
                             HabitListScreen(
                                 onCreateHabit = { backStack.add(AppRoute.CreateHabit) },
+                                onEditHabit = { habitId -> backStack.add(AppRoute.EditHabit(habitId)) },
                             )
                         }
 
@@ -56,6 +58,13 @@ class MainActivity : ComponentActivity() {
                                 onSaved = {
                                     Log.d("MainActivity", "removing last")
                                     backStack.removeLastOrNull() },
+                                onBack = { backStack.removeLastOrNull() },
+                            )
+                        }
+
+                        entry<AppRoute.EditHabit> { route ->
+                            EditHabitScreen(
+                                habitId = route.habitId,
                                 onBack = { backStack.removeLastOrNull() },
                             )
                         }

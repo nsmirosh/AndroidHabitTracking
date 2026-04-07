@@ -1,15 +1,19 @@
 package com.learnkmp.habittrackerandroid.data.local
 
 import com.learnkmp.habittrackerandroid.domain.model.Habit
+import com.learnkmp.habittrackerandroid.domain.model.HabitType
 import java.time.LocalDate
 
 fun HabitEntity.toDomain(): Habit {
     val today = LocalDate.now().toString()
+    // Reset progress when the stored date differs from today
+    val effectiveProgress = if (lastCompletedDate == today) progressToday else 0
     return Habit(
         id = id,
         name = name,
-        // completedToday resets automatically when the stored date differs from today
-        completedToday = completedToday && lastCompletedDate == today,
+        type = try { HabitType.valueOf(type) } catch (_: Exception) { HabitType.TIMES_PER_DAY },
+        targetCount = targetCount,
+        progressToday = effectiveProgress,
     )
 }
 
@@ -18,7 +22,9 @@ fun Habit.toEntity(): HabitEntity {
     return HabitEntity(
         id = id,
         name = name,
-        completedToday = completedToday,
-        lastCompletedDate = if (completedToday) today else null,
+        type = type.name,
+        targetCount = targetCount,
+        progressToday = progressToday,
+        lastCompletedDate = if (progressToday > 0) today else null,
     )
 }

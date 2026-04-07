@@ -20,28 +20,30 @@ class FirestoreHabitDataSource @Inject constructor(
                 HabitEntity(
                     id = doc.id,
                     name = doc.getString("name") ?: return@mapNotNull null,
-                    completedToday = doc.getBoolean("completedToday") ?: false,
+                    type = doc.getString("type") ?: "TIMES_PER_DAY",
+                    targetCount = doc.getLong("targetCount")?.toInt() ?: 1,
+                    progressToday = doc.getLong("progressToday")?.toInt() ?: 0,
                     lastCompletedDate = doc.getString("lastCompletedDate"),
                 )
             }
 
-    suspend fun upsert(userId: String, habit: HabitEntity) {
+    fun upsert(userId: String, habit: HabitEntity) {
         habitsCollection(userId)
             .document(habit.id)
             .set(
                 mapOf(
                     "name" to habit.name,
-                    "completedToday" to habit.completedToday,
+                    "type" to habit.type,
+                    "targetCount" to habit.targetCount,
+                    "progressToday" to habit.progressToday,
                     "lastCompletedDate" to habit.lastCompletedDate,
                 )
             )
-            .await()
     }
 
-    suspend fun delete(userId: String, habitId: String) {
+    fun delete(userId: String, habitId: String) {
         habitsCollection(userId)
             .document(habitId)
             .delete()
-            .await()
     }
 }

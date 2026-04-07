@@ -5,7 +5,19 @@
       "Bash(curl -s \"https://dl.google.com/dl/android/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml\")",
       "Bash(curl -s \"https://repo1.maven.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml\")",
       "Bash(curl -s \"https://repo1.maven.org/maven2/com/google/devtools/ksp/symbol-processing-gradle-plugin/maven-metadata.xml\")",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebSearch",
+      "mcp__android__list_devices",
+      "mcp__android__clear_logs",
+      "mcp__android__launch_app",
+      "mcp__android__screenshot",
+      "mcp__android__tap",
+      "mcp__android__get_ui_tree",
+      "mcp__android__tap_element",
+      "mcp__android__type_text",
+      "mcp__android__get_logs",
+      "mcp__android__install_apk",
+      "mcp__android__press_key"
     ]
   }
 }

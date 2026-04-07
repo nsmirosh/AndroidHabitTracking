@@ -21,7 +21,12 @@ class HabitListViewModel @Inject constructor(
 
     fun toggleCompleted(habit: Habit) {
         viewModelScope.launch {
-            repository.upsert(habit.copy(completedToday = !habit.completedToday))
+            val updated = if (habit.completedToday) {
+                habit.copy(progressToday = 0)
+            } else {
+                habit.copy(progressToday = habit.progressToday + 1)
+            }
+            repository.upsert(updated)
         }
     }
 

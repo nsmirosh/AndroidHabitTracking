@@ -18,7 +18,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): HabitDatabase =
-        Room.databaseBuilder(context, HabitDatabase::class.java, "habits.db").build()
+        Room.databaseBuilder(context, HabitDatabase::class.java, "habits.db")
+            .fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
 
     @Provides
     fun provideHabitDao(db: HabitDatabase): HabitDao = db.habitDao()

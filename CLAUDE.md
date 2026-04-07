@@ -60,7 +60,7 @@ Nav3 is **not** Nav2. There is no `NavController` or `NavHost`. The entire navig
 
 - Room is the single source of truth for the UI (observed via `Flow`).
 - On login, `HabitRepositoryImpl` fetches all Firestore documents and upserts them into Room.
-- All writes go to Room immediately, then are mirrored to Firestore (fire-and-forget; Firestore errors are silently swallowed in the MVP).
+- All writes go to Room immediately, then are mirrored to Firestore (fire-and-forget;).
 - `completedToday` resets automatically via `Mappers.toDomain()`: if `lastCompletedDate != today` the habit is treated as not completed.
 
 ### Dependency management

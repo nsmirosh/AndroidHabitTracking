@@ -1,4 +1,4 @@
-package com.learnkmp.habittrackerandroid.ui.createhabit
+package com.learnkmp.habittrackerandroid.ui.edithabit
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -10,16 +10,17 @@ import com.learnkmp.habittrackerandroid.data.repository.HabitRepository
 import com.learnkmp.habittrackerandroid.domain.model.Habit
 import com.learnkmp.habittrackerandroid.domain.model.HabitType
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class CreateHabitViewModel @Inject constructor(
+class EditHabitViewModel @Inject constructor(
     private val repository: HabitRepository,
 ) : ViewModel() {
+
+    private var habitId: String = ""
 
     var nameInput by mutableStateOf("")
         private set
@@ -30,13 +31,30 @@ class CreateHabitViewModel @Inject constructor(
     var targetCount by mutableIntStateOf(1)
         private set
 
+    var isLoaded by mutableStateOf(false)
+        private set
+
+    private var originalHabit: Habit? = null
+
+    fun load(id: String) {
+        if (isLoaded || habitId == id) return
+        habitId = id
+        viewModelScope.launch {
+            val habit = repository.observeById(id).filterNotNull().first()
+            originalHabit = habit
+            nameInput = habit.name
+            selectedType = habit.type
+            targetCount = habit.targetCount
+            isLoaded = true
+        }
+    }
+
     fun onNameChange(value: String) {
         nameInput = value
     }
 
     fun onTypeChange(type: HabitType) {
         selectedType = type
-        // Sensible defaults
         targetCount = if (type == HabitType.MINUTES_PER_DAY) 30 else 1
     }
 
@@ -47,16 +65,31 @@ class CreateHabitViewModel @Inject constructor(
     fun save(onSaved: () -> Unit) {
         val trimmed = nameInput.trim()
         if (trimmed.isBlank()) return
+        val habit = originalHabit ?: return
         viewModelScope.launch {
             repository.upsert(
-                Habit(
-                    id = UUID.randomUUID().toString(),
+                habit.copy(
                     name = trimmed,
                     type = selectedType,
                     targetCount = targetCount,
                 )
             )
-            withContext(Dispatchers.Main) { onSaved() }
+            onSaved()
+        }
+    }
+
+    fun resetForToday(onDone: () -> Unit) {
+        val habit = originalHabit ?: return
+        viewModelScope.launch {
+            repository.upsert(habit.copy(progressToday = 0))
+            onDone()
+        }
+    }
+
+    fun delete(onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            repository.delete(habitId)
+            onDeleted()
         }
     }
 }
