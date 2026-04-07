@@ -68,3 +68,7 @@ Nav3 is **not** Nav2. There is no `NavController` or `NavHost`. The entire navig
 All versions live in `gradle/libs.versions.toml`. Add new libraries there, not inline in build files.
 
 **Note:** KSP version must match the Kotlin version (`ksp = "2.2.10-x.y.z"`). Check the [KSP releases](https://github.com/google/ksp/releases) if the build fails with a KSP version mismatch.
+
+### Coding conventions
+
+- **No hardcoded strings for Firestore field names or collection paths.** Use `const val` constants (typically in a `companion object`) instead. See `FirestoreHabitDataSource` for the pattern.
