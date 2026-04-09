@@ -60,8 +60,8 @@ Nav3 is **not** Nav2. There is no `NavController` or `NavHost`. The entire navig
 
 - Room is the single source of truth for the UI (observed via `Flow`).
 - On login, `HabitRepositoryImpl` fetches all Firestore documents and upserts them into Room.
-- All writes go to Room immediately, then are mirrored to Firestore (fire-and-forget;).
-- `completedToday` resets automatically via `Mappers.toDomain()`: if `lastCompletedDate != today` the habit is treated as not completed.
+- All writes go to Room immediately, then are mirrored to Firestore (fire-and-forget).
+- `completedToday` resets automatically via `Mappers.toDomain()`: if `lastCompleedDate != today` the habit is treated as not completed.
 
 ### Dependency management
 
@@ -72,3 +72,7 @@ All versions live in `gradle/libs.versions.toml`. Add new libraries there, not i
 ### Coding conventions
 
 - **No hardcoded strings for Firestore field names or collection paths.** Use `const val` constants (typically in a `companion object`) instead. See `FirestoreHabitDataSource` for the pattern.
+
+### MCP tools
+
+Make sure to use the mcp tools for testing and diagnostics
