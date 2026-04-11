@@ -23,11 +23,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.domain.model.HabitType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +40,16 @@ fun CreateHabitScreen(
     onBack: () -> Unit,
     viewModel: CreateHabitViewModel = hiltViewModel(),
 ) {
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                CreateHabitEffect.HabitSaved -> onSaved()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,8 +69,8 @@ fun CreateHabitScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             OutlinedTextField(
-                value = viewModel.nameInput,
-                onValueChange = viewModel::onNameChange,
+                value = state.name,
+                onValueChange = { viewModel.onIntent(CreateHabitIntent.NameChanged(it)) },
                 label = { Text("Habit name") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -70,14 +83,14 @@ fun CreateHabitScreen(
             Spacer(Modifier.height(8.dp))
             Row {
                 FilterChip(
-                    selected = viewModel.selectedType == HabitType.TIMES_PER_DAY,
-                    onClick = { viewModel.onTypeChange(HabitType.TIMES_PER_DAY) },
+                    selected = state.selectedType == HabitType.TIMES_PER_DAY,
+                    onClick = { viewModel.onIntent(CreateHabitIntent.TypeChanged(HabitType.TIMES_PER_DAY)) },
                     label = { Text("Times per day") },
                 )
                 Spacer(Modifier.width(8.dp))
                 FilterChip(
-                    selected = viewModel.selectedType == HabitType.MINUTES_PER_DAY,
-                    onClick = { viewModel.onTypeChange(HabitType.MINUTES_PER_DAY) },
+                    selected = state.selectedType == HabitType.MINUTES_PER_DAY,
+                    onClick = { viewModel.onIntent(CreateHabitIntent.TypeChanged(HabitType.MINUTES_PER_DAY)) },
                     label = { Text("Minutes per day") },
                 )
             }
@@ -85,11 +98,11 @@ fun CreateHabitScreen(
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = viewModel.targetCount.toString(),
-                onValueChange = { it.toIntOrNull()?.let(viewModel::onTargetCountChange) },
+                value = state.targetCount.toString(),
+                onValueChange = { it.toIntOrNull()?.let { v -> viewModel.onIntent(CreateHabitIntent.TargetCountChanged(v)) } },
                 label = {
                     Text(
-                        if (viewModel.selectedType == HabitType.TIMES_PER_DAY) "Target (times)"
+                        if (state.selectedType == HabitType.TIMES_PER_DAY) "Target (times)"
                         else "Target (minutes)"
                     )
                 },
@@ -100,16 +113,16 @@ fun CreateHabitScreen(
                     imeAction = ImeAction.Done,
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { viewModel.save(onSaved) },
+                    onDone = { viewModel.onIntent(CreateHabitIntent.Save) },
                 ),
             )
 
             Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = { viewModel.save(onSaved) },
+                onClick = { viewModel.onIntent(CreateHabitIntent.Save) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = viewModel.nameInput.isNotBlank(),
+                enabled = state.name.isNotBlank(),
             ) {
                 Text("Save")
             }

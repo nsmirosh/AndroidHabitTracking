@@ -12,17 +12,26 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.learnkmp.habittrackerandroid.data.repository.HabitRepository
 import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-sealed interface LoginUiState {
-    data object Idle : LoginUiState
-    data object Loading : LoginUiState
-    data object Success : LoginUiState
-    data class Error(val message: String) : LoginUiState
+data class LoginState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+)
+
+sealed interface LoginIntent {
+    data class SignIn(val activity: Activity, val webClientId: String) : LoginIntent
+    data object DismissError : LoginIntent
+}
+
+sealed interface LoginEffect {
+    data object NavigateToHabitList : LoginEffect
 }
 
 @HiltViewModel
@@ -31,12 +40,22 @@ class LoginViewModel @Inject constructor(
     private val repository: HabitRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
-    val state: StateFlow<LoginUiState> = _state
+    private val _state = MutableStateFlow(LoginState())
+    val state: StateFlow<LoginState> = _state
 
-    fun signIn(activity: Activity, webClientId: String) {
+    private val _effect = Channel<LoginEffect>(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
+
+    fun onIntent(intent: LoginIntent) {
+        when (intent) {
+            is LoginIntent.SignIn -> signIn(intent.activity, intent.webClientId)
+            is LoginIntent.DismissError -> _state.value = _state.value.copy(error = null)
+        }
+    }
+
+    private fun signIn(activity: Activity, webClientId: String) {
         viewModelScope.launch {
-            _state.value = LoginUiState.Loading
+            _state.value = _state.value.copy(isLoading = true, error = null)
             try {
                 Log.d("LoginViewModel", "Starting sign-in with webClientId=$webClientId")
                 val googleIdOption = GetGoogleIdOption.Builder()
@@ -60,15 +79,15 @@ class LoginViewModel @Inject constructor(
                 authResult.user?.uid?.let { uid -> repository.syncFromFirestore(uid) }
 
                 Log.d("LoginViewModel", "returning Success")
-                _state.value = LoginUiState.Success
+                _state.value = _state.value.copy(isLoading = false)
+                _effect.send(LoginEffect.NavigateToHabitList)
             } catch (e: Exception) {
                 Log.e("LoginViewModel", "Sign-in failed", e)
-                _state.value = LoginUiState.Error(e.message ?: "Sign-in failed")
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Sign-in failed",
+                )
             }
         }
-    }
-
-    fun resetError() {
-        _state.value = LoginUiState.Idle
     }
 }

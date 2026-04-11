@@ -12,25 +12,25 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.domain.model.HabitType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +40,18 @@ fun EditHabitScreen(
     onBack: () -> Unit,
     viewModel: EditHabitViewModel = hiltViewModel(),
 ) {
-    LaunchedEffect(habitId) { viewModel.load(habitId) }
+    val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(habitId) { viewModel.onIntent(EditHabitIntent.Load(habitId)) }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                EditHabitEffect.NavigateBack -> onBack()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -50,10 +61,18 @@ fun EditHabitScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    TextButton(
+                        onClick = { viewModel.onIntent(EditHabitIntent.Save) },
+                        enabled = state.name.isNotBlank(),
+                    ) {
+                        Text("Save")
+                    }
+                },
             )
         },
     ) { innerPadding ->
-        if (!viewModel.isLoaded) return@Scaffold
+        if (!state.isLoaded) return@Scaffold
 
         Column(
             modifier = Modifier
@@ -62,8 +81,8 @@ fun EditHabitScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             OutlinedTextField(
-                value = viewModel.nameInput,
-                onValueChange = viewModel::onNameChange,
+                value = state.name,
+                onValueChange = { viewModel.onIntent(EditHabitIntent.NameChanged(it)) },
                 label = { Text("Habit name") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -76,14 +95,14 @@ fun EditHabitScreen(
             Spacer(Modifier.height(8.dp))
             Row {
                 FilterChip(
-                    selected = viewModel.selectedType == HabitType.TIMES_PER_DAY,
-                    onClick = { viewModel.onTypeChange(HabitType.TIMES_PER_DAY) },
+                    selected = state.selectedType == HabitType.TIMES_PER_DAY,
+                    onClick = { viewModel.onIntent(EditHabitIntent.TypeChanged(HabitType.TIMES_PER_DAY)) },
                     label = { Text("Times per day") },
                 )
                 Spacer(Modifier.width(8.dp))
                 FilterChip(
-                    selected = viewModel.selectedType == HabitType.MINUTES_PER_DAY,
-                    onClick = { viewModel.onTypeChange(HabitType.MINUTES_PER_DAY) },
+                    selected = state.selectedType == HabitType.MINUTES_PER_DAY,
+                    onClick = { viewModel.onIntent(EditHabitIntent.TypeChanged(HabitType.MINUTES_PER_DAY)) },
                     label = { Text("Minutes per day") },
                 )
             }
@@ -91,11 +110,11 @@ fun EditHabitScreen(
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = viewModel.targetCount.toString(),
-                onValueChange = { it.toIntOrNull()?.let(viewModel::onTargetCountChange) },
+                value = state.targetCount.toString(),
+                onValueChange = { it.toIntOrNull()?.let { v -> viewModel.onIntent(EditHabitIntent.TargetCountChanged(v)) } },
                 label = {
                     Text(
-                        if (viewModel.selectedType == HabitType.TIMES_PER_DAY) "Target (times)"
+                        if (state.selectedType == HabitType.TIMES_PER_DAY) "Target (times)"
                         else "Target (minutes)"
                     )
                 },
@@ -106,40 +125,10 @@ fun EditHabitScreen(
                     imeAction = ImeAction.Done,
                 ),
                 keyboardActions = KeyboardActions(
-                    onDone = { viewModel.save(onBack) },
+                    onDone = { viewModel.onIntent(EditHabitIntent.Save) },
                 ),
             )
 
-            Spacer(Modifier.height(24.dp))
-
-            Button(
-                onClick = { viewModel.save(onBack) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = viewModel.nameInput.isNotBlank(),
-            ) {
-                Text("Save Changes")
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedButton(
-                onClick = { viewModel.resetForToday(onBack) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Reset Progress for Today")
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            Button(
-                onClick = { viewModel.delete(onBack) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                ),
-            ) {
-                Text("Delete Habit")
-            }
         }
     }
 }

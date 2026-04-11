@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.R
 
 @Composable
@@ -39,14 +39,18 @@ fun LoginScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val webClientId = stringResource(R.string.default_web_client_id)
 
-    LaunchedEffect(state) {
-        when (state) {
-            is LoginUiState.Success -> onLoginSuccess()
-            is LoginUiState.Error -> {
-                snackbarHostState.showSnackbar((state as LoginUiState.Error).message)
-                viewModel.resetError()
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                LoginEffect.NavigateToHabitList -> onLoginSuccess()
             }
-            else -> Unit
+        }
+    }
+
+    LaunchedEffect(state.error) {
+        state.error?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.onIntent(LoginIntent.DismissError)
         }
     }
 
@@ -65,10 +69,10 @@ fun LoginScreen(
                 style = MaterialTheme.typography.headlineLarge,
             )
             Spacer(Modifier.height(48.dp))
-            if (state is LoginUiState.Loading) {
+            if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(48.dp))
             } else {
-                Button(onClick = { viewModel.signIn(activity, webClientId) }) {
+                Button(onClick = { viewModel.onIntent(LoginIntent.SignIn(activity, webClientId)) }) {
                     Text("Sign in with Google")
                 }
             }

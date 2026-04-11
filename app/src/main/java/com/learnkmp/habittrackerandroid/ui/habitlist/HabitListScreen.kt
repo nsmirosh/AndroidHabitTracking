@@ -38,7 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.domain.model.Habit
 import com.learnkmp.habittrackerandroid.domain.model.HabitType
 
@@ -49,7 +49,7 @@ fun HabitListScreen(
     onEditHabit: (String) -> Unit,
     viewModel: HabitListViewModel = hiltViewModel(),
 ) {
-    val habits by viewModel.habits.collectAsState()
+    val state by viewModel.state.collectAsState()
 
     Scaffold(
         topBar = {
@@ -61,7 +61,7 @@ fun HabitListScreen(
             }
         },
     ) { innerPadding ->
-        if (habits.isEmpty()) {
+        if (state.habits.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -82,11 +82,11 @@ fun HabitListScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(habits, key = { it.id }) { habit ->
+                items(state.habits, key = { it.id }) { habit ->
                     HabitItem(
                         habit = habit,
-                        onToggleCompleted = { viewModel.toggleCompleted(habit) },
-                        onDelete = { viewModel.deleteHabit(habit) },
+                        onToggleCompleted = { viewModel.onIntent(HabitListIntent.ToggleCompleted(habit)) },
+                        onDelete = { viewModel.onIntent(HabitListIntent.DeleteHabit(habit)) },
                         onClick = { onEditHabit(habit.id) },
                     )
                 }

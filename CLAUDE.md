@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-Single-module app using **MVVM + Repository pattern** with Hilt DI.
+Single-module app using **MVI + Repository pattern** with Hilt DI.
 
 **Stack:** Kotlin 2.2.10, Jetpack Compose (BOM 2026.02.01), Material Design 3, Hilt 2.56, Room 2.7.1, Firebase Auth + Firestore, Credential Manager (Google Sign-In), Nav3 (`androidx.navigation3`).
 
@@ -47,9 +47,10 @@ com.learnkmp.habittrackerandroid/
 │   └── repository/             HabitRepository interface + HabitRepositoryImpl
 ├── di/                         DatabaseModule, FirebaseModule, RepositoryModule
 └── ui/
-    ├── auth/                   LoginScreen + LoginViewModel (Credential Manager flow)
-    ├── habitlist/              HabitListScreen + HabitListViewModel
-    └── createhabit/            CreateHabitScreen + CreateHabitViewModel
+    ├── auth/                   LoginScreen + LoginViewModel (MVI: LoginState/LoginIntent/LoginEffect)
+    ├── habitlist/              HabitListScreen + HabitListViewModel (MVI: HabitListState/HabitListIntent)
+    ├── createhabit/            CreateHabitScreen + CreateHabitViewModel (MVI: CreateHabitState/CreateHabitIntent/CreateHabitEffect)
+    └── edithabit/              EditHabitScreen + EditHabitViewModel (MVI: EditHabitState/EditHabitIntent/EditHabitEffect)
 ```
 
 ### Navigation (Nav3)
