@@ -2,6 +2,7 @@ package com.learnkmp.habittrackerandroid.ui.habitlist
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
@@ -36,16 +39,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.domain.model.Habit
 import com.learnkmp.habittrackerandroid.domain.model.HabitType
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import kotlin.math.abs
+
+private val DATE_LABEL_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, MMM d")
+private const val SWIPE_THRESHOLD_PX = 120f
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HabitListScreen(
-    onCreateHabit: () -> Unit,
+    onCreateHabit: (LocalDate) -> Unit,
     onEditHabit: (String) -> Unit,
     viewModel: HabitListViewModel = hiltViewModel(),
 ) {
@@ -53,45 +63,115 @@ fun HabitListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("My Habits") })
+            TopAppBar(
+                title = {
+                    DateNavigator(
+                        date = state.selectedDate,
+                        canGoForward = state.canGoForward,
+                        onPrev = { viewModel.onIntent(HabitListIntent.PreviousDay) },
+                        onNext = { viewModel.onIntent(HabitListIntent.NextDay) },
+                    )
+                },
+            )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onCreateHabit) {
+            FloatingActionButton(onClick = { onCreateHabit(state.selectedDate) }) {
                 Icon(Icons.Default.Add, contentDescription = "Add habit")
             }
         },
     ) { innerPadding ->
-        if (state.habits.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "No habits yet. Tap + to add one.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.habits, key = { it.id }) { habit ->
-                    HabitItem(
-                        habit = habit,
-                        onToggleCompleted = { viewModel.onIntent(HabitListIntent.ToggleCompleted(habit)) },
-                        onDelete = { viewModel.onIntent(HabitListIntent.DeleteHabit(habit)) },
-                        onClick = { onEditHabit(habit.id) },
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .pointerInput(state.canGoForward) {
+                    var totalDrag = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { totalDrag = 0f },
+                        onDragEnd = {
+                            if (abs(totalDrag) >= SWIPE_THRESHOLD_PX) {
+                                if (totalDrag > 0) {
+                                    viewModel.onIntent(HabitListIntent.PreviousDay)
+                                } else {
+                                    viewModel.onIntent(HabitListIntent.NextDay)
+                                }
+                            }
+                        },
+                        onDragCancel = { totalDrag = 0f },
+                    ) { _, dragAmount ->
+                        totalDrag += dragAmount
+                    }
+                },
+        ) {
+            if (state.habits.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "No habits yet. Tap + to add one.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(state.habits, key = { it.id }) { habit ->
+                        HabitItem(
+                            habit = habit,
+                            onToggleCompleted = { viewModel.onIntent(HabitListIntent.ToggleCompleted(habit)) },
+                            onDelete = { viewModel.onIntent(HabitListIntent.DeleteHabit(habit)) },
+                            onClick = { onEditHabit(habit.id) },
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DateNavigator(
+    date: LocalDate,
+    canGoForward: Boolean,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onPrev) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Previous day",
+            )
+        }
+        Text(
+            text = dateLabel(date),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        IconButton(onClick = onNext, enabled = canGoForward) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Next day",
+            )
+        }
+    }
+}
+
+private fun dateLabel(date: LocalDate): String {
+    val today = LocalDate.now()
+    return when (date) {
+        today -> "Today"
+        today.minusDays(1) -> "Yesterday"
+        else -> date.format(DATE_LABEL_FORMAT)
     }
 }
 
@@ -102,7 +182,7 @@ private fun HabitItem(
     onDelete: () -> Unit = {},
     onClick: () -> Unit,
 ) {
-    val containerColor = if (habit.completedToday) {
+    val containerColor = if (habit.isCompleted) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
         MaterialTheme.colorScheme.surfaceVariant
@@ -123,7 +203,7 @@ private fun HabitItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
-                checked = habit.completedToday,
+                checked = habit.isCompleted,
                 onCheckedChange = { onToggleCompleted() },
             )
             Column(
@@ -135,7 +215,7 @@ private fun HabitItem(
                 )
                 val label = if (habit.type == HabitType.TIMES_PER_DAY) "times" else "min"
                 Text(
-                    text = "${habit.progressToday} / ${habit.targetCount} $label",
+                    text = "${habit.progress} / ${habit.targetCount} $label",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -151,7 +231,7 @@ private fun HabitItem(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
-                    if (habit.completedToday) {
+                    if (habit.isCompleted) {
                         DropdownMenuItem(
                             text = { Text("Restart") },
                             onClick = {
@@ -182,9 +262,9 @@ private fun HabitItem(
 // region Previews
 
 private val sampleHabits = listOf(
-    Habit(id = "1", name = "Drink Water", type = HabitType.TIMES_PER_DAY, targetCount = 8, progressToday = 5),
-    Habit(id = "2", name = "Meditate", type = HabitType.MINUTES_PER_DAY, targetCount = 15, progressToday = 15),
-    Habit(id = "3", name = "Read", type = HabitType.MINUTES_PER_DAY, targetCount = 30, progressToday = 0),
+    Habit(id = "1", name = "Drink Water", type = HabitType.TIMES_PER_DAY, targetCount = 8, progress = 5),
+    Habit(id = "2", name = "Meditate", type = HabitType.MINUTES_PER_DAY, targetCount = 15, progress = 15),
+    Habit(id = "3", name = "Read", type = HabitType.MINUTES_PER_DAY, targetCount = 30, progress = 0),
 )
 
 @Preview(showBackground = true)
@@ -211,76 +291,13 @@ private fun HabitItemCompletedPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun HabitItemWithMenuPreview() {
+private fun DateNavigatorPreview() {
     MaterialTheme {
-        HabitItem(
-            habit = sampleHabits[0],
-            onToggleCompleted = {},
-            onDelete = {},
-            onClick = {},
+        DateNavigator(
+            date = LocalDate.now().minusDays(1),
+            canGoForward = true,
+            onPrev = {},
+            onNext = {},
         )
     }
 }
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun HabitListScreenEmptyPreview() {
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                @OptIn(ExperimentalMaterial3Api::class)
-                TopAppBar(title = { Text("My Habits") })
-            },
-            floatingActionButton = {
-                FloatingActionButton(onClick = {}) {
-                    Icon(Icons.Default.Add, contentDescription = "Add habit")
-                }
-            },
-        ) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "No habits yet. Tap + to add one.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun HabitListScreenWithHabitsPreview() {
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                @OptIn(ExperimentalMaterial3Api::class)
-                TopAppBar(title = { Text("My Habits") })
-            },
-            floatingActionButton = {
-                FloatingActionButton(onClick = {}) {
-                    Icon(Icons.Default.Add, contentDescription = "Add habit")
-                }
-            },
-        ) { innerPadding ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(sampleHabits, key = { it.id }) { habit ->
-                    HabitItem(habit = habit, onClick = {})
-                }
-            }
-        }
-    }
-}
-
-// endregion

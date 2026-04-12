@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.learnkmp.habittrackerandroid.data.local.HabitDao
 import com.learnkmp.habittrackerandroid.data.local.HabitDatabase
+import com.learnkmp.habittrackerandroid.data.local.HabitProgressDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,4 +25,7 @@ object DatabaseModule {
 
     @Provides
     fun provideHabitDao(db: HabitDatabase): HabitDao = db.habitDao()
+
+    @Provides
+    fun provideHabitProgressDao(db: HabitDatabase): HabitProgressDao = db.habitProgressDao()
 }

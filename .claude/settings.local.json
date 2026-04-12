@@ -18,7 +18,9 @@
       "mcp__android__get_logs",
       "mcp__android__install_apk",
       "mcp__android__press_key",
-      "Bash(./gradlew compileDebugKotlin)"
+      "Bash(./gradlew compileDebugKotlin)",
+      "mcp__android__wait_for_element",
+      "mcp__android__adb_shell"
     ]
   }
 }

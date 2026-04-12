@@ -26,21 +26,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.domain.model.HabitType
+import com.learnkmp.habittrackerandroid.ui.common.ReminderPickerSection
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateHabitScreen(
+    forDate: String,
     onSaved: () -> Unit,
     onBack: () -> Unit,
     viewModel: CreateHabitViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+
+    LaunchedEffect(forDate) {
+        viewModel.onIntent(
+            CreateHabitIntent.SetForDate(
+                runCatching { LocalDate.parse(forDate) }.getOrDefault(LocalDate.now())
+            )
+        )
+    }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -81,18 +93,20 @@ fun CreateHabitScreen(
 
             Text("Tracking type", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 FilterChip(
                     selected = state.selectedType == HabitType.TIMES_PER_DAY,
                     onClick = { viewModel.onIntent(CreateHabitIntent.TypeChanged(HabitType.TIMES_PER_DAY)) },
-                    label = { Text("Times per day") },
+                    label = { Text("Times") },
                 )
                 Spacer(Modifier.width(8.dp))
                 FilterChip(
                     selected = state.selectedType == HabitType.MINUTES_PER_DAY,
                     onClick = { viewModel.onIntent(CreateHabitIntent.TypeChanged(HabitType.MINUTES_PER_DAY)) },
-                    label = { Text("Minutes per day") },
+                    label = { Text("Minutes") },
                 )
+                Spacer(Modifier.width(8.dp))
+                Text("per day", style = MaterialTheme.typography.bodyMedium)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -115,6 +129,15 @@ fun CreateHabitScreen(
                 keyboardActions = KeyboardActions(
                     onDone = { viewModel.onIntent(CreateHabitIntent.Save) },
                 ),
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Text("Reminder", style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(8.dp))
+            ReminderPickerSection(
+                reminderTime = state.reminderTime,
+                onChange = { viewModel.onIntent(CreateHabitIntent.ReminderChanged(it)) },
             )
 
             Spacer(Modifier.height(24.dp))

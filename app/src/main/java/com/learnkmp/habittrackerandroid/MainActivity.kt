@@ -48,13 +48,14 @@ class MainActivity : ComponentActivity() {
 
                         entry<AppRoute.HabitList> {
                             HabitListScreen(
-                                onCreateHabit = { backStack.add(AppRoute.CreateHabit) },
+                                onCreateHabit = { date -> backStack.add(AppRoute.CreateHabit(date.toString())) },
                                 onEditHabit = { habitId -> backStack.add(AppRoute.EditHabit(habitId)) },
                             )
                         }
 
-                        entry<AppRoute.CreateHabit> {
+                        entry<AppRoute.CreateHabit> { route ->
                             CreateHabitScreen(
+                                forDate = route.forDate,
                                 onSaved = {
                                     Log.d("MainActivity", "removing last")
                                     backStack.removeLastOrNull() },

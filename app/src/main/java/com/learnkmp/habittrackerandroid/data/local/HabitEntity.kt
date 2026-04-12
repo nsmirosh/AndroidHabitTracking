@@ -9,7 +9,8 @@ data class HabitEntity(
     val name: String,
     val type: String = "TIMES_PER_DAY",
     val targetCount: Int = 1,
-    val progressToday: Int = 0,
-    // ISO-8601 date string (e.g. "2026-04-03"); null means never tracked today
-    val lastCompletedDate: String? = null,
+    // ISO-8601 date string (e.g. "2026-04-11")
+    val createdDate: String,
+    // ISO-8601 local time string (e.g. "08:30"); null means no reminder
+    val reminderTime: String? = null,
 )

@@ -1,5 +1,6 @@
 package com.learnkmp.habittrackerandroid.ui.edithabit
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.learnkmp.habittrackerandroid.domain.model.HabitType
+import com.learnkmp.habittrackerandroid.ui.common.ReminderPickerSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,18 +96,20 @@ fun EditHabitScreen(
 
             Text("Tracking type", style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.height(8.dp))
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 FilterChip(
                     selected = state.selectedType == HabitType.TIMES_PER_DAY,
                     onClick = { viewModel.onIntent(EditHabitIntent.TypeChanged(HabitType.TIMES_PER_DAY)) },
-                    label = { Text("Times per day") },
+                    label = { Text("Times") },
                 )
                 Spacer(Modifier.width(8.dp))
                 FilterChip(
                     selected = state.selectedType == HabitType.MINUTES_PER_DAY,
                     onClick = { viewModel.onIntent(EditHabitIntent.TypeChanged(HabitType.MINUTES_PER_DAY)) },
-                    label = { Text("Minutes per day") },
+                    label = { Text("Minutes") },
                 )
+                Spacer(Modifier.width(8.dp))
+                Text("per day", style = MaterialTheme.typography.bodyMedium)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -129,6 +134,14 @@ fun EditHabitScreen(
                 ),
             )
 
+            Spacer(Modifier.height(16.dp))
+
+            Text("Reminder", style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(8.dp))
+            ReminderPickerSection(
+                reminderTime = state.reminderTime,
+                onChange = { viewModel.onIntent(EditHabitIntent.ReminderChanged(it)) },
+            )
         }
     }
 }
